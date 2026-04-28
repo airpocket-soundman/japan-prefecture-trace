@@ -20,7 +20,7 @@ if ('serviceWorker' in navigator) {
 
   const INITIAL_REGION = {
     type: 'Polygon',
-    coordinates: [[[129.5, 31], [146, 31], [146, 46], [129.5, 46], [129.5, 31]]]
+    coordinates: [[[131, 33], [144.5, 33], [144.5, 45.5], [131, 45.5], [131, 33]]]
   };
 
   const SAMPLE_STEP = 3;
@@ -103,7 +103,7 @@ if ('serviceWorker' in navigator) {
     const bh = y1 - y0;
     const cx = (x0 + x1) / 2;
     const cy = (y0 + y1) / 2;
-    const k = clampScale(Math.min((W - 2 * PAD) / bw, (H - 2 * PAD) / bh));
+    const k = clampScale(Math.min(W / bw, H / bh));
     return { k, x: W / 2 - k * cx, y: H / 2 - k * cy };
   }
 
