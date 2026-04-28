@@ -10,12 +10,18 @@
     coordinates: [[[122, 23.5], [146.5, 23.5], [146.5, 46], [122, 46], [122, 23.5]]]
   };
 
-  const SAMPLE_STEP = 4;
-  const SCORE_THRESHOLD_PX = 60;
+  const INITIAL_REGION = {
+    type: 'Polygon',
+    coordinates: [[[129.5, 31], [146, 31], [146, 46], [129.5, 46], [129.5, 31]]]
+  };
+
+  const SAMPLE_STEP = 3;
+  const SCORE_THRESHOLD_PX = 18;
+  const SCORE_GAMMA = 1.3;
   const MIN_DRAW_DIST = 2;
 
-  const SCALE_MIN = 0.7;
-  const SCALE_MAX = 40;
+  const SCALE_MIN = 0.5;
+  const SCALE_MAX = 120;
   const ZOOM_BTN_FACTOR = 1.5;
 
   const svg = d3.select('#map');
@@ -40,6 +46,7 @@
   let topo, features;
   let projection, pathFn;
   let validTargets = [];
+  let initialView = { x: 0, y: 0, k: 1 };
 
   let target = null;
   let strokes = [];
@@ -67,6 +74,9 @@
   projection = d3.geoMercator().fitExtent([[PAD, PAD], [W - PAD, H - PAD]], MAIN_BBOX);
   pathFn = d3.geoPath(projection);
 
+  initialView = computeInitialView();
+  Object.assign(view, initialView);
+
   renderBase();
 
   validTargets = features.filter(f => {
@@ -78,6 +88,16 @@
   setPenMode(true);
   pickTarget();
   attachHandlers();
+
+  function computeInitialView() {
+    const [[x0, y0], [x1, y1]] = pathFn.bounds(INITIAL_REGION);
+    const bw = x1 - x0;
+    const bh = y1 - y0;
+    const cx = (x0 + x1) / 2;
+    const cy = (y0 + y1) / 2;
+    const k = clampScale(Math.min((W - 2 * PAD) / bw, (H - 2 * PAD) / bh));
+    return { k, x: W / 2 - k * cx, y: H / 2 - k * cy };
+  }
 
   function innerMeshOf(prefId) {
     return topojson.mesh(topo, topo.objects.japan, (a, b) =>
@@ -159,7 +179,8 @@
     const d2 = s2 / target.innerSamples.length;
 
     const avg = (d1 + d2) / 2;
-    const score = Math.max(0, Math.min(100, 100 * (1 - avg / SCORE_THRESHOLD_PX)));
+    const ratio = Math.min(1, avg / SCORE_THRESHOLD_PX);
+    const score = Math.max(0, Math.min(100, 100 * Math.pow(1 - ratio, SCORE_GAMMA)));
     return { score: Math.round(score), avg, d1, d2 };
   }
 
@@ -197,9 +218,7 @@
   }
 
   function resetView() {
-    view.x = 0;
-    view.y = 0;
-    view.k = 1;
+    Object.assign(view, initialView);
     applyTransform();
   }
 
