@@ -109,42 +109,6 @@ main {
   vector-effect: non-scaling-stroke;
 }
 
-.inset-bg {
-  fill: #fff;
-}
-
-.inset-frame {
-  fill: none;
-  stroke: #b0bec5;
-  stroke-width: 1;
-  stroke-dasharray: 4 4;
-}
-
-.inset-label {
-  fill: #607d8b;
-  font-size: 10px;
-  font-weight: 600;
-  pointer-events: none;
-}
-
-.pref-label {
-  fill: #37474f;
-  font-size: 11px;
-  font-weight: 500;
-  pointer-events: none;
-  user-select: none;
-  paint-order: stroke;
-  stroke: #fff;
-  stroke-width: 3px;
-  stroke-linejoin: round;
-}
-
-.pref-label.target {
-  fill: #c62828;
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .user-stroke {
   fill: none;
   stroke: #e53935;
@@ -163,10 +127,6 @@ main {
   stroke-linecap: round;
   stroke-linejoin: round;
   pointer-events: none;
-  vector-effect: non-scaling-stroke;
-}
-
-.inset-frame {
   vector-effect: non-scaling-stroke;
 }
 
@@ -350,14 +310,13 @@ button.primary:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
   background: #1976d2;
   color: #fff;
-  border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  min-width: auto;
+  border-color: #1976d2;
+  border-radius: 8px;
 }
 
 #btn-pen:hover {
@@ -366,7 +325,7 @@ button.primary:hover {
 
 #btn-pen.pen-off {
   background: #fff;
-  color: #607d8b;
+  color: #455a64;
   border: 1px solid #cfd8dc;
 }
 
@@ -383,11 +342,9 @@ button.primary:hover {
   #app { padding: 10px; }
   h1 { font-size: 22px; letter-spacing: 2px; }
   .pref-name { font-size: 20px; }
-  .pref-label { font-size: 10px; }
-  .pref-label.target { font-size: 11px; }
   .score-num strong { font-size: 44px; }
   button { padding: 8px 16px; font-size: 13px; }
   .map-controls { right: 10px; bottom: 10px; gap: 6px; }
-  #btn-pen { padding: 7px 12px; font-size: 12px; }
+  #btn-pen { padding: 8px 12px; font-size: 13px; }
   .map-btn { padding: 6px 10px; min-width: 36px; }
 }

@@ -5,20 +5,9 @@
   const H = 700;
   const PAD = 16;
 
-  const INSET_W = 170;
-  const INSET_H = 120;
-  const INSET_X = PAD;
-  const INSET_Y = PAD;
-
-  const OKINAWA_ID = 47;
-
   const MAIN_BBOX = {
     type: 'Polygon',
-    coordinates: [[[128.5, 30.3], [146.5, 30.3], [146.5, 46], [128.5, 46], [128.5, 30.3]]]
-  };
-  const OKI_BBOX = {
-    type: 'Polygon',
-    coordinates: [[[122, 24], [129.5, 24], [129.5, 27.5], [122, 27.5], [122, 24]]]
+    coordinates: [[[122, 23.5], [146.5, 23.5], [146.5, 46], [122, 46], [122, 23.5]]]
   };
 
   const SAMPLE_STEP = 4;
@@ -26,15 +15,14 @@
   const MIN_DRAW_DIST = 2;
 
   const SCALE_MIN = 0.7;
-  const SCALE_MAX = 12;
-  const ZOOM_BTN_FACTOR = 1.4;
+  const SCALE_MAX = 40;
+  const ZOOM_BTN_FACTOR = 1.5;
 
   const svg = d3.select('#map');
   const content = svg.select('#content');
   const layerBase = svg.select('#layer-base');
   const layerAnswer = svg.select('#layer-answer');
   const layerUser = svg.select('#layer-user');
-  const layerLabels = svg.select('#layer-labels');
 
   const elMap = svg.node();
   const elPrefName = document.getElementById('prefName');
@@ -49,9 +37,8 @@
   const btnZoomOut = document.getElementById('btn-zoom-out');
   const btnZoomReset = document.getElementById('btn-zoom-reset');
 
-  let topo, features, mainFeatures, okinawaFeature;
-  let projMain, projOki;
-  let pathMain, pathOki;
+  let topo, features;
+  let projection, pathFn;
   let validTargets = [];
 
   let target = null;
@@ -76,21 +63,13 @@
 
   const fc = topojson.feature(topo, topo.objects.japan);
   features = fc.features;
-  okinawaFeature = features.find(f => f.properties.id === OKINAWA_ID);
-  mainFeatures = features.filter(f => f.properties.id !== OKINAWA_ID);
 
-  projMain = d3.geoMercator().fitExtent([[PAD, PAD], [W - PAD, H - PAD]], MAIN_BBOX);
-  pathMain = d3.geoPath(projMain);
-  projOki = d3.geoMercator().fitExtent(
-    [[INSET_X, INSET_Y], [INSET_X + INSET_W, INSET_Y + INSET_H]],
-    OKI_BBOX
-  );
-  pathOki = d3.geoPath(projOki);
+  projection = d3.geoMercator().fitExtent([[PAD, PAD], [W - PAD, H - PAD]], MAIN_BBOX);
+  pathFn = d3.geoPath(projection);
 
   renderBase();
-  renderLabels();
 
-  validTargets = mainFeatures.filter(f => {
+  validTargets = features.filter(f => {
     const m = innerMeshOf(f.properties.id);
     return m.coordinates.length > 0;
   });
@@ -107,75 +86,10 @@
   }
 
   function renderBase() {
-    const mainGeoms = topo.objects.japan.geometries.filter(g => g.properties.id !== OKINAWA_ID);
-    const okiGeoms = topo.objects.japan.geometries.filter(g => g.properties.id === OKINAWA_ID);
-    const landMain = topojson.merge(topo, mainGeoms);
-    const landOki = topojson.merge(topo, okiGeoms);
-
+    const land = topojson.merge(topo, topo.objects.japan.geometries);
     layerBase.append('path')
       .attr('class', 'land')
-      .attr('d', pathMain(landMain));
-
-    layerBase.append('rect')
-      .attr('class', 'inset-bg')
-      .attr('x', INSET_X - 6)
-      .attr('y', INSET_Y - 6)
-      .attr('width', INSET_W + 12)
-      .attr('height', INSET_H + 12);
-
-    layerBase.append('rect')
-      .attr('class', 'inset-frame')
-      .attr('x', INSET_X - 6)
-      .attr('y', INSET_Y - 6)
-      .attr('width', INSET_W + 12)
-      .attr('height', INSET_H + 12);
-
-    layerBase.append('path')
-      .attr('class', 'land')
-      .attr('d', pathOki(landOki));
-
-    layerBase.append('text')
-      .attr('class', 'inset-label')
-      .attr('x', INSET_X)
-      .attr('y', INSET_Y + INSET_H + 8)
-      .text('沖縄県');
-  }
-
-  function renderLabels() {
-    layerLabels.selectAll('text')
-      .data(features)
-      .enter().append('text')
-      .attr('class', 'pref-label')
-      .attr('data-id', d => d.properties.id)
-      .attr('transform', d => {
-        const proj = d.properties.id === OKINAWA_ID ? projOki : projMain;
-        const c = labelPosition(d, proj);
-        return `translate(${c[0]}, ${c[1]})`;
-      })
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .text(d => shortName(d.properties.nam_ja));
-  }
-
-  function shortName(name) {
-    return name.replace(/(都|道|府|県)$/, '');
-  }
-
-  function labelPosition(feature, proj) {
-    const pathFn = d3.geoPath(proj);
-    if (feature.geometry.type === 'MultiPolygon') {
-      let maxArea = -Infinity;
-      let bestPoly = feature.geometry.coordinates[0];
-      for (const poly of feature.geometry.coordinates) {
-        const a = d3.geoArea({ type: 'Polygon', coordinates: poly });
-        if (a > maxArea) {
-          maxArea = a;
-          bestPoly = poly;
-        }
-      }
-      return pathFn.centroid({ type: 'Polygon', coordinates: bestPoly });
-    }
-    return pathFn.centroid(feature);
+      .attr('d', pathFn(land));
   }
 
   function pickTarget() {
@@ -190,7 +104,7 @@
 
     const innerMesh = innerMeshOf(target.properties.id);
     target.innerProjected = innerMesh.coordinates
-      .map(line => line.map(c => projMain(c)).filter(p => p && isFinite(p[0]) && isFinite(p[1])))
+      .map(line => line.map(c => projection(c)).filter(p => p && isFinite(p[0]) && isFinite(p[1])))
       .filter(line => line.length >= 2);
 
     target.innerSamples = [];
@@ -200,8 +114,6 @@
 
     elPrefName.textContent = target.properties.nam_ja;
     elMessage.textContent = '';
-
-    layerLabels.selectAll('text').classed('target', false);
   }
 
   function sampleLine(line, step, output) {
@@ -308,7 +220,6 @@
         .attr('class', 'answer-line')
         .attr('d', lineGen(line));
     }
-    layerLabels.select(`text[data-id="${target.properties.id}"]`).classed('target', true);
   }
 
   function clearUserDrawing() {

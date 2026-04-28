@@ -34,8 +34,8 @@
 - 純粋な静的サイト（HTML/CSS/JS のみ、ビルド不要）
 - 地図描画: [D3.js v7](https://d3js.org/) + [topojson-client v3](https://github.com/topojson/topojson-client)
 - 地図データ: [dataofjapan/land](https://github.com/dataofjapan/land) の `japan.topojson`
-- 投影法: Mercator（沖縄県は別投影で左上に小窓表示）
-- 表示: 日本列島の海岸線のみ（県境は隠した白地図）＋県名ラベル
+- 投影法: Mercator（沖縄まで含めた1枚地図）
+- 表示: 日本列島の海岸線のみ（県境・地名なしの白地図）
 - 描画: SVG + Pointer Events（PC・タブレット・スマホ対応）
 - 操作: 自前実装のジェスチャ処理（マルチタッチでピンチ拡縮、ペンモードで描画と移動を切替）
 
