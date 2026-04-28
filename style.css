@@ -1,0 +1,279 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  background: linear-gradient(180deg, #e8f1f8 0%, #f0f4f8 100%);
+  color: #2c3e50;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  letter-spacing: 4px;
+  color: #1a3a5c;
+}
+
+.subtitle {
+  margin: 0 0 12px;
+  color: #607d8b;
+  font-size: 13px;
+}
+
+.subtitle strong {
+  color: #1976d2;
+}
+
+.task {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  padding: 10px 24px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.task-label {
+  color: #607d8b;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.pref-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1976d2;
+  min-width: 6em;
+  text-align: left;
+}
+
+.message {
+  margin-top: 8px;
+  color: #d32f2f;
+  font-size: 13px;
+  min-height: 18px;
+}
+
+main {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 8px;
+  overflow: hidden;
+}
+
+#map {
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.land {
+  fill: #f5efe2;
+  stroke: #708090;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.inset-bg {
+  fill: #fff;
+}
+
+.inset-frame {
+  fill: none;
+  stroke: #b0bec5;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.inset-label {
+  fill: #607d8b;
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.pref-label {
+  fill: #37474f;
+  font-size: 11px;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.pref-label.target {
+  fill: #c62828;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.user-stroke {
+  fill: none;
+  stroke: #e53935;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.answer-line {
+  fill: none;
+  stroke: #2e7d32;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+footer {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 10px 22px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #fff;
+  color: #455a64;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.15s;
+}
+
+button:hover {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button.primary {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
+}
+
+button.primary:hover {
+  background: #1565c0;
+}
+
+.score {
+  margin: 14px auto 0;
+  padding: 16px 28px;
+  background: #fff;
+  border-radius: 12px;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2px solid #1976d2;
+}
+
+.score-num {
+  font-size: 16px;
+  color: #607d8b;
+}
+
+.score-num strong {
+  font-size: 56px;
+  color: #1976d2;
+  margin-right: 4px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.score-grade {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 6px;
+  color: #2e7d32;
+}
+
+.score-detail {
+  font-size: 11px;
+  color: #90a4ae;
+  margin-top: 6px;
+}
+
+.legend {
+  margin-top: 12px;
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  font-size: 12px;
+  color: #607d8b;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.swatch.user {
+  background: #e53935;
+}
+
+.swatch.answer {
+  background: #2e7d32;
+}
+
+.hint {
+  margin: 8px 0 0;
+  color: #90a4ae;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  #app { padding: 10px; }
+  h1 { font-size: 22px; letter-spacing: 2px; }
+  .pref-name { font-size: 20px; }
+  .pref-label { font-size: 10px; }
+  .pref-label.target { font-size: 11px; }
+  .score-num strong { font-size: 44px; }
+  button { padding: 8px 16px; font-size: 13px; }
+}
