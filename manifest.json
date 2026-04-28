@@ -1,0 +1,28 @@
+{
+  "name": "県の形",
+  "short_name": "県の形",
+  "description": "日本地図の白地図に県境をなぞって精度を競うゲーム",
+  "version": "1.0.0",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#1976d2",
+  "background_color": "#f0f4f8",
+  "lang": "ja",
+  "categories": ["games", "education"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

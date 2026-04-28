@@ -1,6 +1,6 @@
-# 県の形 (Japan Prefecture Trace)
+# 県の形 (Japan Prefecture Trace) v1.0.0
 
-日本地図のなぞりゲームです。県名のみが表示された白地図に、指定された県の**内陸の県境**をなぞって、実際の県境との一致度を競います。
+日本地図のなぞりゲームです。白地図上で、お題に出された県の**内陸の県境**をなぞって、実際の県境との一致度を競います。PWA対応で、ホーム画面に追加すればオフラインでも遊べます。
 
 ## 遊び方
 
@@ -38,6 +38,7 @@
 - 表示: 日本列島の海岸線のみ（県境・地名なしの白地図）
 - 描画: SVG + Pointer Events（PC・タブレット・スマホ対応）
 - 操作: 自前実装のジェスチャ処理（マルチタッチでピンチ拡縮、ペンモードで描画と移動を切替）
+- PWA: `manifest.json` + Service Worker でオフラインキャッシュ、ホーム画面追加対応
 
 ### 内陸県境の自動抽出
 
@@ -83,12 +84,21 @@ npx http-server -p 8080
 .
 ├── index.html          # エントリポイント
 ├── style.css           # スタイル
-├── app.js              # ゲームロジック
+├── app.js              # ゲームロジック ＋ Service Worker 登録
+├── sw.js               # Service Worker（オフラインキャッシュ）
+├── manifest.json       # PWAマニフェスト
+├── icon.svg            # アプリアイコン
 ├── data/
 │   └── japan.topojson  # 都道府県の TopoJSON
 ├── .nojekyll           # GitHub Pages 用
 └── README.md
 ```
+
+## PWA としてインストール
+
+GitHub Pages 公開後（HTTPS環境）、ブラウザのアドレスバー右側の「インストール」アイコン、またはモバイルの「ホーム画面に追加」から PWA としてインストールできます。インストール後は、ネット非接続でも初回読み込み済みのアセットからオフラインで遊べます。
+
+Service Worker のキャッシュキーは `kennokatachi-<バージョン>` なので、`sw.js` 内の `VERSION` を更新すると旧キャッシュは自動破棄されます。
 
 ## ライセンス
 
