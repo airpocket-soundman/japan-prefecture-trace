@@ -20,7 +20,7 @@ if ('serviceWorker' in navigator) {
 
   const INITIAL_REGION = {
     type: 'Polygon',
-    coordinates: [[[131, 33], [144.5, 33], [144.5, 45.5], [131, 45.5], [131, 33]]]
+    coordinates: [[[131.5, 34], [141.5, 34], [141.5, 41.3], [131.5, 41.3], [131.5, 34]]]
   };
 
   const SAMPLE_STEP = 3;
