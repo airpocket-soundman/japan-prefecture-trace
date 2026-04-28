@@ -19,12 +19,25 @@
     <div id="message" class="message"></div>
   </header>
   <main>
-    <svg id="map" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid meet" role="img" aria-label="日本白地図">
-      <g id="layer-base"></g>
-      <g id="layer-answer"></g>
-      <g id="layer-user"></g>
-      <g id="layer-labels"></g>
+    <svg id="map" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid meet" overflow="hidden" role="img" aria-label="日本白地図">
+      <rect id="capture" x="0" y="0" width="900" height="700" fill="transparent"/>
+      <g id="content">
+        <g id="layer-base"></g>
+        <g id="layer-answer"></g>
+        <g id="layer-user"></g>
+        <g id="layer-labels"></g>
+      </g>
     </svg>
+    <div class="map-controls">
+      <button id="btn-pen" type="button" class="map-btn pen-on" title="ペンの有効/無効を切替 (P)">
+        <span class="pen-icon">✎</span><span class="pen-label">ペン ON</span>
+      </button>
+      <div class="zoom-group">
+        <button id="btn-zoom-in" type="button" class="map-btn" title="拡大">＋</button>
+        <button id="btn-zoom-out" type="button" class="map-btn" title="縮小">−</button>
+        <button id="btn-zoom-reset" type="button" class="map-btn" title="リセット">⟲</button>
+      </div>
+    </div>
   </main>
   <footer>
     <div class="controls">
@@ -39,7 +52,8 @@
       <span class="legend-item"><span class="swatch answer"></span>正解の県境</span>
     </div>
     <p class="hint">
-      ヒント：海に面した部分（海岸線）はなぞる必要はありません。隣の県との境界線だけを引きます。
+      ヒント：海に面した部分（海岸線）はなぞる必要はありません。隣の県との境界線だけを引きます。<br>
+      ペンOFFで指1本パン／ピンチで拡大縮小／マウスホイールでも拡大縮小ができます（<kbd>P</kbd>でペン切替）。
     </p>
   </footer>
 </div>

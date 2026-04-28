@@ -25,12 +25,18 @@
   const SCORE_THRESHOLD_PX = 60;
   const MIN_DRAW_DIST = 2;
 
+  const SCALE_MIN = 0.7;
+  const SCALE_MAX = 12;
+  const ZOOM_BTN_FACTOR = 1.4;
+
   const svg = d3.select('#map');
+  const content = svg.select('#content');
   const layerBase = svg.select('#layer-base');
   const layerAnswer = svg.select('#layer-answer');
   const layerUser = svg.select('#layer-user');
   const layerLabels = svg.select('#layer-labels');
 
+  const elMap = svg.node();
   const elPrefName = document.getElementById('prefName');
   const elMessage = document.getElementById('message');
   const elScore = document.getElementById('score');
@@ -38,6 +44,10 @@
   const btnClear = document.getElementById('btn-clear');
   const btnSubmit = document.getElementById('btn-submit');
   const btnNext = document.getElementById('btn-next');
+  const btnPen = document.getElementById('btn-pen');
+  const btnZoomIn = document.getElementById('btn-zoom-in');
+  const btnZoomOut = document.getElementById('btn-zoom-out');
+  const btnZoomReset = document.getElementById('btn-zoom-reset');
 
   let topo, features, mainFeatures, okinawaFeature;
   let projMain, projOki;
@@ -46,9 +56,15 @@
 
   let target = null;
   let strokes = [];
-  let currentStroke = null;
   let submitted = false;
   let recentIds = [];
+
+  let penMode = true;
+  const view = { x: 0, y: 0, k: 1 };
+  const pointers = new Map();
+  let drawingPointerId = null;
+  let panState = null;
+  let pinchState = null;
 
   try {
     topo = await d3.json('data/japan.topojson');
@@ -63,12 +79,8 @@
   okinawaFeature = features.find(f => f.properties.id === OKINAWA_ID);
   mainFeatures = features.filter(f => f.properties.id !== OKINAWA_ID);
 
-  projMain = d3.geoMercator().fitExtent(
-    [[PAD, PAD], [W - PAD, H - PAD]],
-    MAIN_BBOX
-  );
+  projMain = d3.geoMercator().fitExtent([[PAD, PAD], [W - PAD, H - PAD]], MAIN_BBOX);
   pathMain = d3.geoPath(projMain);
-
   projOki = d3.geoMercator().fitExtent(
     [[INSET_X, INSET_Y], [INSET_X + INSET_W, INSET_Y + INSET_H]],
     OKI_BBOX
@@ -83,6 +95,8 @@
     return m.coordinates.length > 0;
   });
 
+  applyTransform();
+  setPenMode(true);
   pickTarget();
   attachHandlers();
 
@@ -237,11 +251,44 @@
     return { score: Math.round(score), avg, d1, d2 };
   }
 
-  function getSvgPoint(evt) {
-    const rect = svg.node().getBoundingClientRect();
-    const x = (evt.clientX - rect.left) * (W / rect.width);
-    const y = (evt.clientY - rect.top) * (H / rect.height);
-    return [x, y];
+  function pointerToSvg(evt) {
+    const rect = elMap.getBoundingClientRect();
+    return [
+      (evt.clientX - rect.left) * (W / rect.width),
+      (evt.clientY - rect.top) * (H / rect.height)
+    ];
+  }
+
+  function svgToContent([x, y]) {
+    return [(x - view.x) / view.k, (y - view.y) / view.k];
+  }
+
+  function pointerToContent(evt) {
+    return svgToContent(pointerToSvg(evt));
+  }
+
+  function applyTransform() {
+    content.attr('transform', `translate(${view.x}, ${view.y}) scale(${view.k})`);
+  }
+
+  function clampScale(k) {
+    return Math.max(SCALE_MIN, Math.min(SCALE_MAX, k));
+  }
+
+  function zoomAtSvg(svgX, svgY, factor) {
+    const newK = clampScale(view.k * factor);
+    const realFactor = newK / view.k;
+    view.x = svgX - (svgX - view.x) * realFactor;
+    view.y = svgY - (svgY - view.y) * realFactor;
+    view.k = newK;
+    applyTransform();
+  }
+
+  function resetView() {
+    view.x = 0;
+    view.y = 0;
+    view.k = 1;
+    applyTransform();
   }
 
   const lineGen = d3.line();
@@ -278,33 +325,61 @@
     return 'ファイト！';
   }
 
-  function attachHandlers() {
-    const node = svg.node();
+  function setPenMode(on) {
+    penMode = !!on;
+    if (penMode) {
+      btnPen.classList.remove('pen-off');
+      btnPen.classList.add('pen-on');
+      btnPen.querySelector('.pen-label').textContent = 'ペン ON';
+      elMap.classList.remove('pen-off');
+    } else {
+      btnPen.classList.remove('pen-on');
+      btnPen.classList.add('pen-off');
+      btnPen.querySelector('.pen-label').textContent = 'ペン OFF';
+      elMap.classList.add('pen-off');
+      cancelInProgressDraw();
+    }
+  }
 
-    node.addEventListener('pointerdown', evt => {
-      if (submitted) return;
-      evt.preventDefault();
-      try { node.setPointerCapture(evt.pointerId); } catch (_) {}
-      const p = getSvgPoint(evt);
-      currentStroke = [p];
-      strokes.push(currentStroke);
+  function cancelInProgressDraw() {
+    if (drawingPointerId !== null) {
+      const last = strokes[strokes.length - 1];
+      if (last && last.length < 2) strokes.pop();
+      drawingPointerId = null;
       redrawUserStrokes();
+    }
+  }
+
+  function startStroke(contentPt) {
+    const stroke = [contentPt];
+    strokes.push(stroke);
+    redrawUserStrokes();
+    return stroke;
+  }
+
+  function appendStroke(contentPt) {
+    const stroke = strokes[strokes.length - 1];
+    if (!stroke) return;
+    const last = stroke[stroke.length - 1];
+    const screenDist = Math.hypot(contentPt[0] - last[0], contentPt[1] - last[1]) * view.k;
+    if (screenDist >= MIN_DRAW_DIST) {
+      stroke.push(contentPt);
+      redrawUserStrokes();
+    }
+  }
+
+  function attachHandlers() {
+    elMap.addEventListener('pointerdown', onPointerDown);
+    elMap.addEventListener('pointermove', onPointerMove);
+    elMap.addEventListener('pointerup', onPointerEnd);
+    elMap.addEventListener('pointercancel', onPointerEnd);
+    elMap.addEventListener('pointerleave', evt => {
+      if (pointers.has(evt.pointerId)) onPointerEnd(evt);
     });
 
-    node.addEventListener('pointermove', evt => {
-      if (!currentStroke || submitted) return;
-      const p = getSvgPoint(evt);
-      const last = currentStroke[currentStroke.length - 1];
-      if (Math.hypot(p[0] - last[0], p[1] - last[1]) >= MIN_DRAW_DIST) {
-        currentStroke.push(p);
-        redrawUserStrokes();
-      }
-    });
+    elMap.addEventListener('wheel', onWheel, { passive: false });
 
-    const endStroke = () => { currentStroke = null; };
-    node.addEventListener('pointerup', endStroke);
-    node.addEventListener('pointercancel', endStroke);
-    node.addEventListener('pointerleave', endStroke);
+    elMap.addEventListener('contextmenu', evt => evt.preventDefault());
 
     btnUndo.addEventListener('click', () => {
       if (submitted) return;
@@ -317,55 +392,197 @@
       clearUserDrawing();
     });
 
-    btnSubmit.addEventListener('click', () => {
-      if (submitted) return;
-      if (strokes.length === 0 || strokes.every(s => s.length < 2)) {
-        elMessage.textContent = '線を描いてから判定してください';
-        return;
-      }
-      const result = scoreDrawing();
-      submitted = true;
-      showAnswer();
+    btnSubmit.addEventListener('click', onSubmit);
+    btnNext.addEventListener('click', onNext);
 
-      elScore.hidden = false;
-      elScore.innerHTML = `
-        <div class="score-num"><strong>${result.score}</strong><span>点</span></div>
-        <div class="score-grade">${gradeText(result.score)}</div>
-        <div class="score-detail">平均誤差 ${result.avg.toFixed(1)} px</div>
-      `;
+    btnPen.addEventListener('click', () => setPenMode(!penMode));
 
-      btnSubmit.hidden = true;
-      btnUndo.hidden = true;
-      btnClear.hidden = true;
-      btnNext.hidden = false;
-      elMessage.textContent = '';
-    });
-
-    btnNext.addEventListener('click', () => {
-      submitted = false;
-      clearUserDrawing();
-      layerAnswer.selectAll('*').remove();
-      elScore.hidden = true;
-      btnSubmit.hidden = false;
-      btnUndo.hidden = false;
-      btnClear.hidden = false;
-      btnNext.hidden = true;
-      pickTarget();
-    });
+    btnZoomIn.addEventListener('click', () => zoomAtSvg(W / 2, H / 2, ZOOM_BTN_FACTOR));
+    btnZoomOut.addEventListener('click', () => zoomAtSvg(W / 2, H / 2, 1 / ZOOM_BTN_FACTOR));
+    btnZoomReset.addEventListener('click', resetView);
 
     document.addEventListener('keydown', evt => {
       if (evt.target && (evt.target.tagName === 'INPUT' || evt.target.tagName === 'TEXTAREA')) return;
-      if (evt.key === 'z' || evt.key === 'Z' || evt.key === 'Backspace') {
+      if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
+      const k = evt.key;
+      if (k === 'z' || k === 'Z' || k === 'Backspace') {
         if (!submitted) {
           strokes.pop();
           redrawUserStrokes();
         }
-      } else if (evt.key === 'Enter') {
+      } else if (k === 'Enter') {
         if (!submitted) btnSubmit.click();
         else btnNext.click();
-      } else if (evt.key === 'c' || evt.key === 'C') {
+      } else if (k === 'c' || k === 'C') {
         if (!submitted) clearUserDrawing();
+      } else if (k === 'p' || k === 'P') {
+        setPenMode(!penMode);
+      } else if (k === '0') {
+        resetView();
+      } else if (k === '+' || k === '=') {
+        zoomAtSvg(W / 2, H / 2, ZOOM_BTN_FACTOR);
+      } else if (k === '-' || k === '_') {
+        zoomAtSvg(W / 2, H / 2, 1 / ZOOM_BTN_FACTOR);
       }
     });
+  }
+
+  function onPointerDown(evt) {
+    if (evt.button && evt.button !== 0) return;
+    evt.preventDefault();
+
+    pointers.set(evt.pointerId, {
+      clientX: evt.clientX,
+      clientY: evt.clientY,
+      type: evt.pointerType
+    });
+
+    if (pointers.size === 2) {
+      cancelInProgressDraw();
+      panState = null;
+      const [a, b] = pointers.values();
+      const midClient = [(a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2];
+      const midSvg = clientToSvg(midClient[0], midClient[1]);
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      pinchState = {
+        midSvg,
+        dist,
+        view: { ...view }
+      };
+      return;
+    }
+
+    if (pointers.size > 2) return;
+
+    if (penMode && !submitted) {
+      try { elMap.setPointerCapture(evt.pointerId); } catch (_) {}
+      drawingPointerId = evt.pointerId;
+      const cp = pointerToContent(evt);
+      startStroke(cp);
+    } else {
+      try { elMap.setPointerCapture(evt.pointerId); } catch (_) {}
+      panState = {
+        pointerId: evt.pointerId,
+        startSvg: pointerToSvg(evt),
+        view: { ...view }
+      };
+    }
+  }
+
+  function onPointerMove(evt) {
+    if (!pointers.has(evt.pointerId)) return;
+    const rec = pointers.get(evt.pointerId);
+    rec.clientX = evt.clientX;
+    rec.clientY = evt.clientY;
+
+    if (pinchState && pointers.size >= 2) {
+      const its = [...pointers.values()];
+      const a = its[0], b = its[1];
+      const midClient = [(a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2];
+      const midSvg = clientToSvg(midClient[0], midClient[1]);
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      const ratio = dist / pinchState.dist;
+      const newK = clampScale(pinchState.view.k * ratio);
+      const realRatio = newK / pinchState.view.k;
+      const cInit = [
+        (pinchState.midSvg[0] - pinchState.view.x) / pinchState.view.k,
+        (pinchState.midSvg[1] - pinchState.view.y) / pinchState.view.k
+      ];
+      view.k = newK;
+      view.x = midSvg[0] - cInit[0] * newK;
+      view.y = midSvg[1] - cInit[1] * newK;
+      applyTransform();
+      return;
+    }
+
+    if (drawingPointerId === evt.pointerId) {
+      const cp = pointerToContent(evt);
+      appendStroke(cp);
+      return;
+    }
+
+    if (panState && panState.pointerId === evt.pointerId) {
+      const cur = pointerToSvg(evt);
+      view.x = panState.view.x + (cur[0] - panState.startSvg[0]);
+      view.y = panState.view.y + (cur[1] - panState.startSvg[1]);
+      applyTransform();
+    }
+  }
+
+  function onPointerEnd(evt) {
+    if (!pointers.has(evt.pointerId)) return;
+    pointers.delete(evt.pointerId);
+
+    if (drawingPointerId === evt.pointerId) {
+      drawingPointerId = null;
+    }
+
+    if (panState && panState.pointerId === evt.pointerId) {
+      panState = null;
+    }
+
+    if (pinchState && pointers.size < 2) {
+      pinchState = null;
+      if (pointers.size === 1) {
+        const [remaining] = pointers.values();
+        const remainingId = [...pointers.keys()][0];
+        const fakeEvt = { clientX: remaining.clientX, clientY: remaining.clientY };
+        if (!penMode) {
+          panState = {
+            pointerId: remainingId,
+            startSvg: clientToSvg(fakeEvt.clientX, fakeEvt.clientY),
+            view: { ...view }
+          };
+        }
+      }
+    }
+  }
+
+  function clientToSvg(cx, cy) {
+    const rect = elMap.getBoundingClientRect();
+    return [(cx - rect.left) * (W / rect.width), (cy - rect.top) * (H / rect.height)];
+  }
+
+  function onWheel(evt) {
+    evt.preventDefault();
+    const [sx, sy] = pointerToSvg(evt);
+    const factor = Math.pow(1.0015, -evt.deltaY);
+    zoomAtSvg(sx, sy, factor);
+  }
+
+  function onSubmit() {
+    if (submitted) return;
+    if (strokes.length === 0 || strokes.every(s => s.length < 2)) {
+      elMessage.textContent = '線を描いてから判定してください';
+      return;
+    }
+    const result = scoreDrawing();
+    submitted = true;
+    showAnswer();
+
+    elScore.hidden = false;
+    elScore.innerHTML = `
+      <div class="score-num"><strong>${result.score}</strong><span>点</span></div>
+      <div class="score-grade">${gradeText(result.score)}</div>
+      <div class="score-detail">平均誤差 ${result.avg.toFixed(1)} px</div>
+    `;
+
+    btnSubmit.hidden = true;
+    btnUndo.hidden = true;
+    btnClear.hidden = true;
+    btnNext.hidden = false;
+    elMessage.textContent = '';
+  }
+
+  function onNext() {
+    submitted = false;
+    clearUserDrawing();
+    layerAnswer.selectAll('*').remove();
+    elScore.hidden = true;
+    btnSubmit.hidden = false;
+    btnUndo.hidden = false;
+    btnClear.hidden = false;
+    btnNext.hidden = true;
+    pickTarget();
   }
 })();

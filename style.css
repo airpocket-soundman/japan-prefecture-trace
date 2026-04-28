@@ -73,6 +73,7 @@ h1 {
 }
 
 main {
+  position: relative;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -88,13 +89,24 @@ main {
   cursor: crosshair;
   user-select: none;
   -webkit-user-select: none;
+  background: #fff;
+}
+
+#map.pen-off {
+  cursor: grab;
+}
+
+#map.pen-off:active {
+  cursor: grabbing;
 }
 
 .land {
-  fill: #f5efe2;
-  stroke: #708090;
-  stroke-width: 1.2;
+  fill: none;
+  stroke: #37474f;
+  stroke-width: 1.3;
   stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .inset-bg {
@@ -141,6 +153,7 @@ main {
   stroke-linejoin: round;
   opacity: 0.85;
   pointer-events: none;
+  vector-effect: non-scaling-stroke;
 }
 
 .answer-line {
@@ -150,6 +163,11 @@ main {
   stroke-linecap: round;
   stroke-linejoin: round;
   pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.inset-frame {
+  vector-effect: non-scaling-stroke;
 }
 
 footer {
@@ -266,6 +284,99 @@ button.primary:hover {
   margin: 8px 0 0;
   color: #90a4ae;
   font-size: 12px;
+  line-height: 1.7;
+}
+
+.hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  background: #f5f5f5;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  color: #455a64;
+}
+
+.map-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.map-controls > * {
+  pointer-events: auto;
+}
+
+.zoom-group {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.map-btn {
+  padding: 8px 12px;
+  font-size: 16px;
+  font-family: inherit;
+  border: none;
+  background: #fff;
+  color: #455a64;
+  cursor: pointer;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 40px;
+  line-height: 1.2;
+  transition: background 0.15s;
+}
+
+.map-btn:hover {
+  background: #eceff1;
+  transform: none;
+}
+
+.zoom-group .map-btn:not(:last-child) {
+  border-bottom: 1px solid #eceff1;
+}
+
+#btn-pen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #1976d2;
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: auto;
+}
+
+#btn-pen:hover {
+  background: #1565c0;
+}
+
+#btn-pen.pen-off {
+  background: #fff;
+  color: #607d8b;
+  border: 1px solid #cfd8dc;
+}
+
+#btn-pen.pen-off:hover {
+  background: #f5f5f5;
+}
+
+.pen-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 @media (max-width: 600px) {
@@ -276,4 +387,7 @@ button.primary:hover {
   .pref-label.target { font-size: 11px; }
   .score-num strong { font-size: 44px; }
   button { padding: 8px 16px; font-size: 13px; }
+  .map-controls { right: 10px; bottom: 10px; gap: 6px; }
+  #btn-pen { padding: 7px 12px; font-size: 12px; }
+  .map-btn { padding: 6px 10px; min-width: 36px; }
 }
